@@ -1,81 +1,49 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to you under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-name: build
-
-on:
-  push:
-    branches:
-      - "2.x"
-      - "release/2*"
-    paths-ignore:
-      - "**.adoc"
-      - "**.md"
-      - "**.txt"
-  pull_request:
-    paths-ignore:
-      - "**.adoc"
-      - "**.md"
-      - "**.txt"
-
-permissions: read-all
-
 jobs:
-
   build:
     if: github.actor != 'dependabot[bot]'
-    # Temporary switch to `@fix/macos-java-8` to see how the situation evolves with macOS runners
     uses: apache/logging-parent/.github/workflows/build-reusable.yaml@fix/macos-java-8
-    # uses: apache/logging-parent/.github/workflows/build-reusable.yaml@rel/11.0.0
     with:
-      java-version: |
-        8
+      java-version: '8
+
         17
+
+        '
       site-enabled: true
-
-  deploy-snapshot:
-    needs: build
-    if: github.repository == 'apache/logging-log4j2' && github.ref_name == '2.x'
-    uses: apache/logging-parent/.github/workflows/deploy-snapshot-reusable.yaml@rel/11.1.0
-    # Secrets for deployments
-    secrets:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USER }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PW }}
-    with:
-      java-version: |
-        8
-        17
-
   deploy-release:
+    if: github.repository == 'apache/logging-log4j2' && startsWith(github.ref_name,
+      'release/2')
     needs: build
-    if: github.repository == 'apache/logging-log4j2' && startsWith(github.ref_name, 'release/2')
-    uses: apache/logging-parent/.github/workflows/deploy-release-reusable.yaml@rel/11.1.0
-    # Secrets for deployments
-    secrets:
-      GPG_SECRET_KEY: ${{ secrets.LOGGING_GPG_SECRET_KEY }}
-      NEXUS_USERNAME: ${{ secrets.LOGGING_STAGE_DEPLOYER_USER }}
-      NEXUS_PASSWORD: ${{ secrets.LOGGING_STAGE_DEPLOYER_PW }}
-      SVN_USERNAME: ${{ secrets.LOGGING_SVN_DEV_USERNAME }}
-      SVN_PASSWORD: ${{ secrets.LOGGING_SVN_DEV_PASSWORD }}
-    # Write permissions to allow the Maven `revision` property update, changelog release, etc.
     permissions:
       contents: write
+    secrets:
+      GPG_SECRET_KEY: ${{ secrets.LOGGING_GPG_SECRET_KEY }}
+      NEXUS_PASSWORD: ${{ secrets.LOGGING_STAGE_DEPLOYER_PW }}
+      NEXUS_USERNAME: ${{ secrets.LOGGING_STAGE_DEPLOYER_USER }}
+      SVN_PASSWORD: ${{ secrets.LOGGING_SVN_DEV_PASSWORD }}
+      SVN_USERNAME: ${{ secrets.LOGGING_SVN_DEV_USERNAME }}
+    uses: apache/logging-parent/.github/workflows/deploy-release-reusable.yaml@rel/11.1.0
     with:
-      java-version: |
-        8
+      java-version: '8
+
         17
+
+        '
       project-id: log4j
+  deploy-snapshot:
+    if: github.repository == 'apache/logging-log4j2' && github.ref_name == '2.x'
+    needs: build
+    secrets:
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PW }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USER }}
+    uses: apache/logging-parent/.github/workflows/deploy-snapshot-reusable.yaml@rel/11.1.0
+    with:
+      java-version: '8
+
+        17
+
+        '
+name: build
+on:
+  repository_dispatch:
+    types: trigger-ga___build.yaml
+permissions: read-all

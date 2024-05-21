@@ -1,50 +1,26 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to you under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-name: merge-dependabot
-
-on:
-  pull_request_target:
-    paths-ignore:
-      - "**.adoc"
-      - "**.md"
-      - "**.txt"
-
-permissions: read-all
-
 jobs:
-
   build:
-    if: github.repository == 'apache/logging-log4j2' && github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]'
-    # Temporary switch to `@fix/macos-java-8` to see how the situation evolves with macOS runners
+    if: github.repository == 'apache/logging-log4j2' && github.event_name == 'pull_request_target'
+      && github.actor == 'dependabot[bot]'
     uses: apache/logging-parent/.github/workflows/build-reusable.yaml@fix/macos-java-8
-    # uses: apache/logging-parent/.github/workflows/build-reusable.yaml@rel/11.0.0
     with:
-      java-version: |
-        8
+      java-version: '8
+
         17
 
+        '
   merge-dependabot:
     needs: build
+    permissions:
+      contents: write
+      pull-requests: write
+    secrets:
+      GPG_SECRET_KEY: ${{ secrets.LOGGING_GPG_SECRET_KEY }}
     uses: apache/logging-parent/.github/workflows/merge-dependabot-reusable.yaml@rel/11.1.0
     with:
       java-version: 17
-    permissions:
-      contents: write                                             # to push changelog commits
-      pull-requests: write                                        # to close the PR
-    secrets:
-      GPG_SECRET_KEY: ${{ secrets.LOGGING_GPG_SECRET_KEY }}       # to sign commits
+name: merge-dependabot
+on:
+  repository_dispatch:
+    types: trigger-ga___merge-dependabot.yaml
+permissions: read-all
